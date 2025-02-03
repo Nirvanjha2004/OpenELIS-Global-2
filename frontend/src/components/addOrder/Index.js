@@ -809,6 +809,7 @@ const Index = () => {
                 <Button
                   kind="primary"
                   className="forwardButton"
+                  data-cy="submit-button"
                   disabled={
                     isSubmitting || errors?.errors?.length > 0 ? true : false
                   }
