@@ -18,25 +18,33 @@ class ModifyOrderPage {
       .click();
   }
 
-  clickNextButton() {
-    return cy.get(".forwardButton").should("be.visible").click();
+  clickFinalSubmitButton() {
+    return cy.get("[data-cy='submit-button']").should("be.visible").click({force: true});
   }
+
+  clickNextButton() {
+     return cy.get(".forwardButton").should("be.visible").click();
+     
+  }
+
 
   checkProgramButton() {
     return cy.get("#additionalQuestionsSelect").should("be.disabled");
   }
 
   assignValues() {
-    cy.get(
-      ":nth-child(1) > :nth-child(4) > .cds--form-item > .cds--checkbox-label",
-    ).click();
+    // Wait for table to be visible first
+    cy.get('table').should('be.visible');
+    // Then find the checkbox within table cells
+    cy.get('table input[type="checkbox"][name="add"]').first().click({force: true});
   }
 
   clickPrintBarcodeButton() {
-    return cy.get(".orderEntrySuccessMsg > :nth-child(3) > .cds--btn").click();
+    return cy.get("[data-cy='printBarCode']").click();
+
   }
   clickSearchPatientButton() {
-    return cy.get(":nth-child(12) > .cds--btn").click({ force: true });
+    return cy.get("[data-cy='searchPatientButton']").click({ force: true });
   }
 
   clickRespectivePatient() {
