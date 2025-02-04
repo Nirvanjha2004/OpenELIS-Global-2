@@ -15,14 +15,12 @@ import {
   Button,
   Grid,
   Column,
-  Row,
   Stack,
   Pagination,
   Select,
   SelectItem,
   Loading,
   Link,
-  FileUploader,
 } from "@carbon/react";
 import { Copy, ArrowLeft, ArrowRight } from "@carbon/icons-react";
 import CustomLabNumberInput from "../common/CustomLabNumberInput";
@@ -44,6 +42,7 @@ function ResultSearchPage() {
   const [resultForm, setResultForm] = useState(originalResultForm);
   const [searchBy, setSearchBy] = useState({ type: "", doRange: false });
   const [param, setParam] = useState("&accessionNumber=");
+
   const setResults = (resultForm) => {
     setOriginalResultForm(resultForm);
     setResultForm(resultForm);
@@ -96,7 +95,6 @@ export function SearchResultForm(props) {
   const [currentApiPage, setCurrentApiPage] = useState(null);
   const [totalApiPages, setTotalApiPages] = useState(null);
   const [url, setUrl] = useState("");
-
   const componentMounted = useRef(false);
 
   const setResultsWithId = (results) => {
@@ -435,7 +433,6 @@ export function SearchResultForm(props) {
         initialValues={searchFormValues}
         //validationSchema={}
         onSubmit={handleSubmit}
-        data-cy="search-form"
         onChange
         enableReinitialize={true}
       >
@@ -571,7 +568,6 @@ export function SearchResultForm(props) {
                             }
                             name={field.name}
                             id={field.name}
-                            //data-cy="testName"
                           >
                             <SelectItem
                               text={defaultTestLabel}
@@ -601,7 +597,6 @@ export function SearchResultForm(props) {
                             }
                             name={field.name}
                             id={field.name}
-                            data-cy="analysisStatus"
                           >
                             <SelectItem
                               text={defaultAnalysisStatusLabel}
@@ -662,13 +657,9 @@ export function SearchResultForm(props) {
                 {searchBy.type !== "patient" && searchBy.type !== "unit" && (
                   <Column lg={16} md={8} sm={4}>
                     <Button
-                      style={{
-                        marginTop: "16px",
-                      }}
+                      style={{ marginTop: "16px" }}
                       type="submit"
                       id="submit"
-                      component="button"
-                      data-testid="search-test-button"
                     >
                       <FormattedMessage id="label.button.search" />
                     </Button>
@@ -697,7 +688,6 @@ export function SearchResultForm(props) {
                 labelText={intl.formatMessage({ id: "search.label.testunit" })}
                 name="unitType"
                 id="unitType"
-                data-cy="unitType"
                 onChange={submitOnSelect}
               >
                 <SelectItem
@@ -853,6 +843,40 @@ export function SearchResults(props) {
       componentMounted.current = false;
     };
   }, []);
+
+  useEffect(() => {
+    if (props.results.testResult) {
+      let newValidationState = { ...validationState };
+      props.results.testResult.forEach((row) => {
+        if (row.resultType === "N") {
+          let value = row.resultValue;
+          if (!value) {
+            return;
+          }
+          let validation = (newValidationState[row.id] = validateNumericResults(
+            value,
+            row,
+          ));
+
+          row.resultValue = validation.newValue;
+          validation.style = {
+            ...validation?.style,
+            borderColor: validation.isCritical
+              ? "orange"
+              : validation.isInvalid
+                ? "red"
+                : "",
+            background: validation.outsideValid
+              ? "#ffa0a0"
+              : validation.outsideNormal
+                ? "#ffffa0"
+                : "var(--cds-field)",
+          };
+        }
+      });
+      setValidationState(newValidationState);
+    }
+  }, [props.results]);
 
   const loadReferalOrganizations = (values) => {
     if (componentMounted.current) {
@@ -1054,7 +1078,6 @@ export function SearchResults(props) {
             <Field name="forceTechApproval">
               {() => (
                 <Checkbox
-                  data-cy="checkbox-label"
                   id={"testResult" + row.id + ".forceTechApproval"}
                   name={"testResult[" + row.id + "].forceTechApproval"}
                   labelText=""
@@ -1161,45 +1184,46 @@ export function SearchResults(props) {
                 type="number"
                 value={row.resultValue}
                 style={validationState[row.id]?.style}
-                onMouseOut={(e) => {
-                  let value = e.target.value;
-                  if (value == null || value == "") {
-                    return;
-                  }
-                  let newValidationState = { ...validationState };
-                  let validation = (newValidationState[row.id] =
-                    validateNumericResults(value, row));
-                  //e.target.value = validation.newValue;
-                  row.resultValue = validation.newValue;
-                  validation.style = {
-                    ...validation?.style,
-                    borderColor: validation.isCritical
-                      ? "orange"
-                      : validation.isInvalid
-                        ? "red"
-                        : "",
-                    background: validation.outsideValid
-                      ? "#ffa0a0"
-                      : validation.outsideNormal
-                        ? "#ffffa0"
-                        : "var(--cds-field)",
-                  };
-
-                  setValidationState(newValidationState);
-
+                onBlur={(e) => {
                   if (
-                    validation.isInvalid &&
+                    validationState[row.id].isInvalid &&
                     configurationProperties.ALERT_FOR_INVALID_RESULTS
                   ) {
-                    alert(
-                      intl.formatMessage({
-                        id: "result.outOfValidRange.msg",
-                      }),
-                    );
+                    addNotification({
+                      title: intl.formatMessage({ id: "notification.title" }),
+                      message:
+                        intl.formatMessage({
+                          id: "result.outOfValidRange.msg",
+                        }) +
+                        " " +
+                        row.testName +
+                        " : " +
+                        row.resultValue,
+                      kind: NotificationKinds.error,
+                    });
+                    setNotificationVisible(true);
                   }
                 }}
                 onChange={(e) => {
                   handleChange(e, row.id);
+                  if (
+                    validationState[row.id].isInvalid &&
+                    configurationProperties.ALERT_FOR_INVALID_RESULTS
+                  ) {
+                    addNotification({
+                      title: intl.formatMessage({ id: "notification.title" }),
+                      message:
+                        intl.formatMessage({
+                          id: "result.outOfValidRange.msg",
+                        }) +
+                        " " +
+                        row.testName +
+                        " : " +
+                        row.resultValue,
+                      kind: NotificationKinds.error,
+                    });
+                    setNotificationVisible(true);
+                  }
                 }}
               />
             );
@@ -1261,7 +1285,6 @@ export function SearchResults(props) {
         <Column lg={2}>
           <Select
             id={"testMethod" + data.id}
-            data-cy={"testMethod" + data.id}
             name={"testResult[" + data.id + "].testMethod"}
             labelText={intl.formatMessage({ id: "referral.label.testmethod" })}
             onChange={(e) => handleChange(e, data.id)}
@@ -1294,7 +1317,6 @@ export function SearchResults(props) {
         <Column lg={3}>
           <Select
             id={"referralReason" + data.id}
-            data-cy={"referralReason" + data.id}
             name={"testResult[" + data.id + "].referralItem.referralReasonId"}
             // noLabel={true}
             labelText={intl.formatMessage({ id: "referral.label.reason" })}
@@ -1316,7 +1338,6 @@ export function SearchResults(props) {
         <Column lg={3}>
           <Select
             id={"institute" + data.id}
-            data-cy={"institute" + data.id}
             name={
               "testResult[" + data.id + "].referralItem.referredInstituteId"
             }
@@ -1401,7 +1422,6 @@ export function SearchResults(props) {
       greaterThanOrLessThan = value.charAt(0);
     }
     var actualValue = ("" + value).replace(/[<>]/g, "");
-
     let validation = {
       isInvalid: false,
       outsideNormal: false,
@@ -1593,6 +1613,23 @@ export function SearchResults(props) {
     }
   };
 
+  const handleAcceptAsIsChange = (e, rowId) => {
+    console.debug("handleAcceptAsIsChange:" + acceptAsIs[rowId]);
+    handleChange(e, rowId);
+    if (acceptAsIs[rowId] == undefined) {
+      alert(intl.formatMessage({ id: "result.acceptasis.warning" }));
+      addNotification({
+        title: intl.formatMessage({ id: "notification.title" }),
+        message: intl.formatMessage({ id: "result.acceptasis.warning" }),
+        kind: NotificationKinds.warning,
+      });
+      setNotificationVisible(true);
+    }
+    var newAcceptAsIs = acceptAsIs;
+    newAcceptAsIs[rowId] = !acceptAsIs[rowId];
+    setAcceptAsIs(newAcceptAsIs);
+  };
+
   const handleSave = (values) => {
     console.debug("handleSave:" + values);
     if (isSubmitting) {
@@ -1763,7 +1800,6 @@ export function SearchResults(props) {
               <Button
                 type="button"
                 id="submit"
-                //data-cy="submitButtonForResultPage"
                 onClick={handleSave}
                 style={{ marginTop: "16px" }}
                 disabled={isSubmitting}
