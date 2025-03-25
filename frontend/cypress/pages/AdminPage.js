@@ -39,6 +39,20 @@ class AdminPage {
     return new GlobalMenuConfigPage();
   }
 
+  goToPatientMenuConfigPage() {
+    cy.contains("button", "Menu Configuration").click({ force: true });
+    cy.get(".cds--side-nav__menu-item")
+      .should("be.visible")
+      .contains("Patient Menu Configuration")
+      .click({ force: true });
+
+    // Verify the URL and the visibility of the content
+    cy.url().should("include", "#patientMenuManagement");
+    cy.contains("Patient Menu Management").should("be.visible");
+
+    return new PatientMenuConfigPage();
+  }
+
   goToProgramEntry() {
     cy.get("[data-cy='programEntry']").should("be.visible");
     cy.get("[data-cy='programEntry']").click();
