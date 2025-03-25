@@ -975,6 +975,7 @@ const CalculatedValue: React.FC<CalculatedValueProps> = () => {
                 label={<FormattedMessage id="rulebuilder.label.addRule" />}
                 size="md"
                 kind="tertiary"
+                style={{ marginLeft: "30px" }}
               >
                 <Add size={16} />
                 <span>

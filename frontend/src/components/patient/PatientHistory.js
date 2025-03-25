@@ -40,7 +40,7 @@ const PatientHistory = () => {
     <>
       <PageBreadCrumb breadcrumbs={breadcrumbs} />
       <Grid fullWidth={true}>
-        <Column lg={16}>
+        <Column lg={16} md={8} sm={4}>
           <Section>
             <Section>
               <Heading>
@@ -54,7 +54,7 @@ const PatientHistory = () => {
 
       <div className="orderLegendBody">
         <Grid fullWidth={true}>
-          <Column lg={16}>
+          <Column lg={16} md={8} sm={4}>
             <SearchPatientForm getSelectedPatient={getSelectedPatient} />
           </Column>
         </Grid>
